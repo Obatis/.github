@@ -1,0 +1,19 @@
+name: CI
+on:
+  push: { branches: [staging] }
+  pull_request: { branches: [staging, main] }
+jobs:
+  guard:
+    uses: Obatis/.github/.github/workflows/org-policies-guard.yml@main
+  backend:
+    if: hashFiles('composer.json') != ''
+    uses: Obatis/.github/.github/workflows/ci-backend-laravel.yml@main
+    with: { runner_label: 'staging' }
+  frontend:
+    if: hashFiles('pubspec.yaml') != ''
+    uses: Obatis/.github/.github/workflows/ci-frontend-flutter.yml@main
+    with: { runner_label: 'staging' }
+  infra:
+    if: hashFiles('ansible.cfg') != ''
+    uses: Obatis/.github/.github/workflows/ci-infra-ansible.yml@main
+    with: { runner_label: 'staging' }
