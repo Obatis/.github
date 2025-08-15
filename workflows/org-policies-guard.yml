@@ -1,0 +1,21 @@
+name: Org Policies Guard
+on:
+  workflow_call: {}
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block disallowed files
+        run: |
+          disallowed=("id_rsa" ".pem" ".p12" ".env" "dump.sql" "secrets.json")
+          for f in "${disallowed[@]}"; do
+            if git ls-files | grep -q "$f"; then
+              echo "::error::Fichier proscrit détecté: $f"; exit 1
+            fi
+          done
+      - name: Simple PII guard (email in dumps)
+        run: |
+          if git grep -nE "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}" -- '*.sql' '*.csv' >/dev/null; then
+            echo "::warning::Emails trouvés dans des artefacts potentiellement sensibles. Vérifier l’anonymisation."
+          fi
