@@ -1,0 +1,21 @@
+name: CI Frontend (Flutter)
+on:
+  workflow_call:
+    inputs:
+      channel: { required: false, type: string, default: 'stable' }
+      runner_label: { required: false, type: string, default: 'staging' }
+jobs:
+  analyze-test:
+    runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: ${{ inputs.channel }} }
+      - run: flutter --version
+      - run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+      - name: Unit tests
+        run: flutter test --machine > test_report.json || true
+      - uses: actions/upload-artifact@v4
+        with: { name: flutter-tests, path: test_report.json }
