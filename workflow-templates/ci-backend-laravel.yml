@@ -1,0 +1,10 @@
+name: "CI Backend (Laravel) – template"
+on:
+  push: { branches: [staging] }
+  pull_request:
+    branches: [staging, main]
+jobs:
+  call:
+    uses: Obatis/.github/.github/workflows/ci-backend-laravel.yml@main
+    with:
+      runner_label: 'staging'
