@@ -1,0 +1,31 @@
+name: CI Backend (Laravel)
+on:
+  workflow_call:
+    inputs:
+      php: { required: false, type: string, default: '8.3' }
+      runner_label: { required: false, type: string, default: 'staging' } # ou 'prod'
+jobs:
+  test:
+    runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php }}
+          extensions: mbstring, intl, gd, pdo_pgsql
+          coverage: xdebug
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-interaction --prefer-dist
+      - name: Lint (Pint)
+        run: vendor/bin/pint --test
+      - name: Static Analysis (Larastan)
+        run: vendor/bin/phpstan analyse --no-progress
+      - name: Unit tests (Pest)
+        run: vendor/bin/pest --coverage-clover=coverage.xml
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with: { name: coverage-backend, path: coverage.xml }
