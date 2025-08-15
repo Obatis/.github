@@ -1,5 +1,4 @@
 ## Objet / Contexte
-<!-- Pourquoi ce changement ? -->
 
 ## Changements
 - [ ] Code
@@ -16,5 +15,4 @@
 - [ ] Tests verts (CI)
 - [ ] Lint OK
 - [ ] Pas de secret/PII
-- [ ] Couverture ≥ seuil requis (si applicable)
-- [ ] Plan rollback si risque
+- [ ] Plan rollback décrit si risque
