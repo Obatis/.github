@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [staging, main]
 jobs:
-  call:
+  guard: { uses: Obatis/.github/.github/workflows/org-policies-guard.yml@main }
+  frontend:
     uses: Obatis/.github/.github/workflows/ci-frontend-flutter.yml@main
-    with:
-      runner_label: 'staging'
+    with: { runner_label: 'staging' }
