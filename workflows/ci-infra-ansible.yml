@@ -1,0 +1,15 @@
+name: CI Infra (Ansible)
+on:
+  workflow_call:
+    inputs:
+      runner_label: { required: false, type: string, default: 'staging' }
+jobs:
+  lint:
+    runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible & linters
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible ansible-lint
+      - name: Lint playbooks
+        run: ansible-lint -v
