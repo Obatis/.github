@@ -1,0 +1,29 @@
+name: "CI – Ops & Docs (PR)"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  pr:
+    if: ${{ github.event.pull_request.draft == false }}
+    name: "Ops/Docs PR checks"
+    uses: obatis/.github/.github/workflows/ops-ci-pr.yml@main
+    with:
+      # Build Docusaurus & lint markdown seront pris en charge dans le workflow central
+      build-docs: true
+      markdown-lint: true
+      link-check: false   # activer plus tard pour éviter les faux positifs au début
+      environment: "staging"
+    secrets: {}
