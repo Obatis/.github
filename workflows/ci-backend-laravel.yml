@@ -1,31 +1,76 @@
 name: CI Backend (Laravel)
+
 on:
   workflow_call:
     inputs:
-      php: { required: false, type: string, default: '8.3' }
-      runner_label: { required: false, type: string, default: 'staging' } # ou 'prod'
+      php:
+        type: string
+        default: "8.3"
+        required: false
+      runner_label:
+        type: string
+        default: "staging"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
+
 jobs:
-  test:
+  backend-ci:
+    name: backend-ci
     runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ inputs.php }}
-          extensions: mbstring, intl, gd, pdo_pgsql
+          extensions: mbstring, intl, gd, pdo_pgsql, pcntl
           coverage: xdebug
+
       - name: Cache Composer
         uses: actions/cache@v4
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-      - run: composer install --no-interaction --prefer-dist
+
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist --no-progress
+
       - name: Lint (Pint)
         run: vendor/bin/pint --test
+
       - name: Static Analysis (Larastan)
         run: vendor/bin/phpstan analyse --no-progress
-      - name: Unit tests (Pest)
-        run: vendor/bin/pest --coverage-clover=coverage.xml
+
+      - name: Unit tests (Pest + coverage)
+        run: |
+          vendor/bin/pest \
+            --colors=always \
+            --coverage-clover=coverage.xml \
+            --log-junit=junit.xml
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
-        with: { name: coverage-backend, path: coverage.xml }
+        with:
+          name: backend-coverage
+          path: coverage.xml
+          if-no-files-found: error
+
+      - name: Upload junit
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-junit
+          path: junit.xml
+          if-no-files-found: ignore
+
