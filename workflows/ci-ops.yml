@@ -1,0 +1,109 @@
+name: CI Ops (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      runner_label:
+        description: "Self-hosted runner label (staging/prod) ou 'ubuntu-latest'"
+        type: string
+        default: "staging"
+        required: false
+      node_version:
+        description: "Version de Node pour Docusaurus/outils"
+        type: string
+        default: "20"
+        required: false
+      markdown_lint:
+        description: "Activer le lint Markdown"
+        type: boolean
+        default: true
+        required: false
+      link_check:
+        description: "Activer le check de liens (plus lent)"
+        type: boolean
+        default: false
+        required: false
+      build_docs:
+        description: "Construire la doc (Docusaurus)"
+        type: boolean
+        default: true
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  ops-ci:
+    name: ops-ci
+    runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+
+      - name: Install deps (npm ci or install)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      # ----- Markdown lint (markdownlint-cli) -----
+      - name: Lint Markdown
+        if: ${{ inputs.markdown_lint }}
+        run: |
+          npx --yes markdownlint-cli@0.41.0 "**/*.md" \
+            --ignore "node_modules" \
+            ${MARKDOWNLINT_CONFIG:+--config "$MARKDOWNLINT_CONFIG"}
+        env:
+          # Optionnel: pointer vers un fichier partagé si présent dans le repo
+          MARKDOWNLINT_CONFIG: .markdownlint.yml
+
+      # ----- Vérification de liens (linkinator) -----
+      - name: Link check
+        if: ${{ inputs.link_check }}
+        run: |
+          npx --yes linkinator@6.1.2 . \
+            --recurse \
+            --silent \
+            --skip "node_modules|^mailto:|^tel:" \
+            --timeout 60000
+
+      # ----- Build Docusaurus (si présent) -----
+      - name: Detect Docusaurus
+        id: detect_docs
+        if: ${{ inputs.build_docs }}
+        run: |
+          if [ -f docusaurus.config.ts ] || [ -f docusaurus.config.js ]; then
+            echo "has_docs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_docs=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Docs (Docusaurus)
+        if: ${{ inputs.build_docs && steps.detect_docs.outputs.has_docs == 'true' }}
+        run: |
+          # build standard
+          npx --yes docusaurus@latest build
+          # zip pour artefact
+          cd build && zip -r ../site-build.zip . && cd -
+
+      - name: Upload site artifact
+        if: ${{ inputs.build_docs && steps.detect_docs.outputs.has_docs == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-build
+          path: site-build.zip
+          if-no-files-found: ignore
