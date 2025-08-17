@@ -18,20 +18,24 @@ permissions:
 jobs:
   ops-ci:
     name: ops-ci
-    # ✅ Pas de concaténation avec '+' ; on utilise format() + fromJSON()
+    # Pas de concaténation avec '+'
     runs-on: ${{ inputs.use_self_hosted
       && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label))
       || inputs.runner_label }}
+
     steps:
       - uses: actions/checkout@v4
 
+      # Node seulement si on en a besoin (lint / links / build docs)
       - name: Setup Node
+        if: ${{ inputs.markdown_lint || inputs.link_check || inputs.build_docs }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
-          cache: npm
+          # ⚠️ NE PAS mettre "cache: npm" s'il n'y a pas de lockfile
 
       - name: Install dependencies
+        if: ${{ inputs.markdown_lint || inputs.link_check || inputs.build_docs }}
         run: |
           if [ -f package-lock.json ]; then
             npm ci
