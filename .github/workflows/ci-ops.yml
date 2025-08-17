@@ -3,57 +3,62 @@ name: CI Ops
 on:
   workflow_call:
     inputs:
-      runner_label:  { type: string,  default: "staging", required: false }
-      use_self_hosted: { type: boolean, default: false,     required: false }
-      node_version:  { type: string,  default: "20",     required: false }
-      markdown_lint: { type: boolean, default: true,     required: false }
-      link_check:    { type: boolean, default: false,    required: false }
-      build_docs:    { type: boolean, default: false,    required: false }
-    secrets:
-      GH_TOKEN: { required: false }
+      use_self_hosted:  { type: boolean, default: false }
+      runner_label:     { type: string,  default: "staging" }
+      node_version:     { type: string,  default: "20" }
+      markdown_lint:    { type: boolean, default: true }
+      link_check:       { type: boolean, default: false }
+      build_docs:       { type: boolean, default: false }
 
 permissions:
   contents: read
   pull-requests: write
   checks: write
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.run_id }}
-  cancel-in-progress: false
-
 jobs:
   ops-ci:
     name: ops-ci
-    # IMPORTANT : pas de concaténation avec '+'. Utilise format() + fromJSON().
-    runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
+    # ← plus de '+' ici
+    runs-on: ${{ inputs.use_self_hosted
+      && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label))
+      || 'ubuntu-latest' }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
+      # Setup Node avec cache si lockfile présent
+      - name: Setup Node (with cache)
+        if: ${{ hashFiles('**/package-lock.json', '**/npm-shrinkwrap.json', '**/yarn.lock') != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
-        # Surtout PAS de "cache: npm" (sinon erreur si pas de lockfile)
+          cache: npm
 
-      - name: Install dependencies (si package.json)
-        if: ${{ inputs.markdown_lint || inputs.link_check || inputs.build_docs }}
+      # Setup Node sans cache sinon
+      - name: Setup Node (no cache)
+        if: ${{ hashFiles('**/package-lock.json', '**/npm-shrinkwrap.json', '**/yarn.lock') == '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      - name: Install dependencies
         run: |
-          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
             npm ci
-          elif [ -f package.json ]; then
-            npm install
+          elif [ -f yarn.lock ]; then
+            yarn install --frozen-lockfile
           else
-            echo "Pas de package.json — on skip l'installation Node."
+            echo "No lockfile found – skipping install"
           fi
 
       - name: Lint Markdown
         if: ${{ inputs.markdown_lint }}
         run: npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules"
 
-      - name: Check links (optionnel)
+      - name: Check links (optional)
         if: ${{ inputs.link_check }}
-        run: npx --yes markdown-link-check -q -r **/*.md || true
+        run: npx --yes markdown-link-check -q '**/*.md'
 
-      - name: Build docs (optionnel)
+      - name: Build docs (optional)
         if: ${{ inputs.build_docs }}
-        run: echo "Build docs à brancher ici"
+        run: npm run docs:build
