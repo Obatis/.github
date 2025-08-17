@@ -18,8 +18,9 @@ permissions:
 jobs:
   ops-ci:
     name: ops-ci
+    # ✅ Pas de concaténation avec '+' ; on utilise format() + fromJSON()
     runs-on: ${{ inputs.use_self_hosted
-      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
+      && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label))
       || inputs.runner_label }}
     steps:
       - uses: actions/checkout@v4
@@ -30,18 +31,32 @@ jobs:
           node-version: ${{ inputs.node_version }}
           cache: npm
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json; skipping npm install"
+          fi
 
       - name: Lint Markdown
         if: ${{ inputs.markdown_lint }}
-        run: npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules" ${{ env.MARKDOWNLINT_CONFIG && format('--config "{0}"', env.MARKDOWNLINT_CONFIG) || '' }}
+        env:
+          MD_CONF: ${{ env.MARKDOWNLINT_CONFIG }}
+        run: |
+          if [ -n "${MD_CONF}" ]; then
+            npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules" --config "${MD_CONF}"
+          else
+            npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules"
+          fi
 
-      - name: Link checker (optional)
+      - name: Check links (optional)
         if: ${{ inputs.link_check }}
-        run: npx --yes markdown-link-check@3 "**/*.md" -q || true
+        run: |
+          npx --yes markdown-link-check@3 "**/*.md" -q || true
 
       - name: Build docs (optional)
         if: ${{ inputs.build_docs }}
-        run: echo "build your docs here"
+        run: echo "Build your docs here"
