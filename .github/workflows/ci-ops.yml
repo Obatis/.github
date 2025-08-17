@@ -24,7 +24,7 @@ jobs:
       || inputs.runner_label }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Node seulement si on en a besoin (lint / links / build docs)
       - name: Setup Node
