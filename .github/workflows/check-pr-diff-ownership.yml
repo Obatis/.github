@@ -1,0 +1,32 @@
+name: Check PR Diff Ownership
+on:
+  workflow_call:
+    inputs:
+      allowed_globs: { type: string, required: false, default: '' }
+      forbidden_globs: { type: string, required: false, default: 'server/**,nginx/**,/etc/**' }
+      enforce: { type: boolean, required: false, default: true }
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Compute diff
+        run: |
+          base=${{ github.event.pull_request.base.sha }}
+          head=${{ github.event.pull_request.head.sha }}
+          git diff --name-only "$base" "$head" > changed.txt
+          echo "Changed files:"; cat changed.txt
+      - name: Enforce ownership rules
+        run: |
+          forbid="${{ inputs.forbidden_globs }}"
+          allow="${{ inputs.allowed_globs }}"
+          status=0
+          while IFS= read -r f; do
+            # autorisés
+            if [ -n "$allow" ] && echo "$f" | grep -E "$(echo $allow | sed 's/,/|/g' | sed 's/\*/.*/g')" >/dev/null 2>&1; then continue; fi
+            # interdits
+            if [ -n "$forbid" ] && echo "$f" | grep -E "$(echo $forbid | sed 's/,/|/g' | sed 's/\*/.*/g')" >/dev/null 2>&1; then
+              echo "::error::Fichier modifié dans une zone interdite: $f"; status=1; fi
+          done < changed.txt
+          if [ $status -ne 0 ] && [ "${{ inputs.enforce }}" = "true" ]; then exit 1; fi
