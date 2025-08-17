@@ -3,22 +3,11 @@ name: CI Backend (Laravel)
 on:
   workflow_call:
     inputs:
-      runner_label:
-        type: string
-        default: "ubuntu-latest"
-        required: false
-      run_phpstan:
-        type: boolean
-        default: true
-        required: false
-      run_phpcs:
-        type: boolean
-        default: true
-        required: false
-      run_tests:
-        type: boolean
-        default: true
-        required: false
+      runner_label:      { type: string,  default: "ubuntu-latest", required: false }
+      use_self_hosted:   { type: boolean, default: false,           required: false }
+      run_phpstan:       { type: boolean, default: true,            required: false }
+      run_phpcs:         { type: boolean, default: true,            required: false }
+      run_tests:         { type: boolean, default: true,            required: false }
 
 permissions:
   contents: read
@@ -27,7 +16,9 @@ permissions:
 
 jobs:
   backend-ci:
-    runs-on: ${{ inputs.runner_label }}
+    runs-on: ${{ inputs.use_self_hosted
+      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
+      || inputs.runner_label }}
     steps:
       - uses: actions/checkout@v4
 
