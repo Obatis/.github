@@ -1,18 +1,106 @@
-## Objet / Contexte
+# Contexte
+<!-- Pourquoi cette PR ? Lien vers l’issue / ticket / ADR / incident.
+Décrire le problème, l’approche retenue, et les alternatives écartées. -->
 
-## Changements
-- [ ] Code
-- [ ] Tests
-- [ ] Docs (OpenAPI/ADR/Runbook)
+- Issue liée : #
+- ADR / décision : 
+- Scope principal : Backend (Laravel/API) | Frontend (FlutterFlow) | DB (PostgreSQL) | Infra/DevOps (Nginx, Docker, Ploi, CI/CD) | IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 
-## Impacts
-- DB: [ ] oui / [ ] non
-- Infra/Nginx: [ ] oui / [ ] non
-- Sécurité/Secrets: [ ] oui / [ ] non
-- Observabilité (logs/metrics): [ ] oui / [ ] non
+---
 
-## Checklist
-- [ ] Tests verts (CI)
-- [ ] Lint OK
-- [ ] Pas de secret/PII
-- [ ] Plan rollback décrit si risque
+# Impacts
+- [ ] **Breaking change**
+- [ ] **Migrations DB** (idempotentes + rollback)
+- [ ] **API publique** (OpenAPI changée)
+- [ ] **Performance** (indexes, N+1, caches)
+- [ ] **Sécurité** (RBAC, secret handling, scopes)
+- [ ] **Observabilité** (logs/metrics/traces)
+- [ ] **Compat Octane/RoadRunner** (pas d’état global, pas de singletons mutables)
+- [ ] **Env/Config** à ajuster (feature flags, variables)
+
+**Détails d’impact (quels modules/services touchés, risques business) :**
+- 
+
+---
+
+# Critères d’acceptation
+<!-- Décris des scénarios testables (Given/When/Then). -->
+- [ ] **CA-1** :  
+  - *Given*  
+  - *When*  
+  - *Then*  
+- [ ] **CA-2** :  
+  - *Given*  
+  - *When*  
+  - *Then*  
+
+<details>
+<summary>Notes de test manuels (facultatif)</summary>
+
+- Préconditions :
+- Étapes :
+- Résultat attendu :
+- Captures d’écran / logs :
+</details>
+
+---
+
+# Checklist CI
+- Qualité & Tests
+  - [ ] Linter/formatters OK (ex. PHP-CS-Fixer, ESLint)
+  - [ ] Tests unitaires/intégration ajoutés ou mis à jour
+  - [ ] Couverture **≥ 70%** backend (vérifiée par CI)
+  - [ ] E2E/contract tests pertinents (si API/flows)
+- Build & Déploiement
+  - [ ] Build Docker local OK (si applicable)
+  - [ ] Workflows GitHub Actions **verts**
+  - [ ] Artefacts/versioning mis à jour (si applicable)
+- Base de données
+  - [ ] `migrate` passe en **staging**
+  - [ ] `migrate:rollback` testé et documenté
+  - [ ] Indexes/constraints ajustés si besoin
+- Sécurité & RGPD
+  - [ ] Aucun secret en dépôt / `.env` non committé
+  - [ ] RBAC/permissions revues (routes, policies, gates)
+  - [ ] Données perso : minimisation / masquage logs / rétention
+- Perf & Observabilité
+  - [ ] Revue N+1 / requêtes lourdes
+  - [ ] Métriques/labels Prometheus ajoutés/MAJ
+  - [ ] Logs structurés (niveau, contexte) conformes
+- Documentation
+  - [ ] **OpenAPI/Swagger** mis à jour
+  - [ ] **Docusaurus** (guides, runbooks) mis à jour
+  - [ ] **ADR** rédigée/complétée si décision d’architecture
+- Gouvernance PR
+  - [ ] **Labels** appliqués (type, scope, priorité)
+  - [ ] **CODEOWNERS** requis ajoutés comme reviewers
+  - [ ] Changelog/Release notes préparés (si release)
+
+---
+
+# Risques / Rollback
+**Risques identifiés :**
+- 
+
+**Plan de rollback clair :**
+- Étapes : `php artisan down` (si nécessaire) → `migrate:rollback` → revert commit → `php artisan up`
+- Feature flag / kill-switch : 
+- Données à restaurer / scripts de correction : 
+
+---
+
+# Liens docs
+- Issue / Carte : 
+- ADR : 
+- OpenAPI : 
+- Runbook / SOP : 
+- Dashboard **staging** / page de test : 
+- Logs/alertes (Sentry/Grafana/Prometheus) : 
+
+---
+
+<!-- Astuces :
+- Pense à découper en petites PRs si possible.
+- Joindre captures/gifs pour les changements UI.
+- Mentionner explicitement tout changement de contrat API ou de schéma.
+-->
