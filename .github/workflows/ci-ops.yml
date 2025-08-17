@@ -3,64 +3,57 @@ name: CI Ops
 on:
   workflow_call:
     inputs:
-      runner_label:    { type: string,  default: "ubuntu-latest", required: false }
-      use_self_hosted: { type: boolean, default: false,           required: false }
-      node_version:    { type: string,  default: "20",            required: false }
-      markdown_lint:   { type: boolean, default: true,            required: false }
-      link_check:      { type: boolean, default: false,           required: false }
-      build_docs:      { type: boolean, default: false,           required: false }
+      runner_label:  { type: string,  default: "staging", required: false }
+      use_self_hosted: { type: boolean, default: false,     required: false }
+      node_version:  { type: string,  default: "20",     required: false }
+      markdown_lint: { type: boolean, default: true,     required: false }
+      link_check:    { type: boolean, default: false,    required: false }
+      build_docs:    { type: boolean, default: false,    required: false }
+    secrets:
+      GH_TOKEN: { required: false }
 
 permissions:
   contents: read
-  checks: write
   pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   ops-ci:
     name: ops-ci
-    # Pas de concaténation avec '+'
-    runs-on: ${{ inputs.use_self_hosted
-      && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label))
-      || inputs.runner_label }}
-
+    # IMPORTANT : pas de concaténation avec '+'. Utilise format() + fromJSON().
+    runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      # Node seulement si on en a besoin (lint / links / build docs)
       - name: Setup Node
-        if: ${{ inputs.markdown_lint || inputs.link_check || inputs.build_docs }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
-          # ⚠️ NE PAS mettre "cache: npm" s'il n'y a pas de lockfile
+        # Surtout PAS de "cache: npm" (sinon erreur si pas de lockfile)
 
-      - name: Install dependencies
+      - name: Install dependencies (si package.json)
         if: ${{ inputs.markdown_lint || inputs.link_check || inputs.build_docs }}
         run: |
-          if [ -f package-lock.json ]; then
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
             npm ci
           elif [ -f package.json ]; then
             npm install
           else
-            echo "No package.json; skipping npm install"
+            echo "Pas de package.json — on skip l'installation Node."
           fi
 
       - name: Lint Markdown
         if: ${{ inputs.markdown_lint }}
-        env:
-          MD_CONF: ${{ env.MARKDOWNLINT_CONFIG }}
-        run: |
-          if [ -n "${MD_CONF}" ]; then
-            npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules" --config "${MD_CONF}"
-          else
-            npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules"
-          fi
+        run: npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules"
 
-      - name: Check links (optional)
+      - name: Check links (optionnel)
         if: ${{ inputs.link_check }}
-        run: |
-          npx --yes markdown-link-check@3 "**/*.md" -q || true
+        run: npx --yes markdown-link-check -q -r **/*.md || true
 
-      - name: Build docs (optional)
+      - name: Build docs (optionnel)
         if: ${{ inputs.build_docs }}
-        run: echo "Build your docs here"
+        run: echo "Build docs à brancher ici"
