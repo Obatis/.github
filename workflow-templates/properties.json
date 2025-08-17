@@ -1,7 +1,0 @@
-{
-  "name": "Obatis CI templates",
-  "description": "Workflows CI prêts à l’emploi pour les dépôts Obatis.",
-  "iconName": "octicon-check",
-  "categories": ["Continuous integration", "Code review"],
-  "filePatterns": ["composer.json", "pubspec.yaml", "ansible.cfg"]
-}
