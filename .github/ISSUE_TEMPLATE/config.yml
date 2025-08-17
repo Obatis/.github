@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security – signaler une vulnérabilité
+    url: mailto:contact@obatis.be
+    about: N’envoyez aucun secret ni PII par e‑mail.
