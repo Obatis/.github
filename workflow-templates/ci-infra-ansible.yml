@@ -1,8 +1,0 @@
-name: "CI Infra (Ansible) – template"
-on:
-  pull_request: { branches: [staging, main] }
-jobs:
-  guard: { uses: Obatis/.github/.github/workflows/org-policies-guard.yml@main }
-  infra:
-    uses: Obatis/.github/.github/workflows/ci-infra-ansible.yml@main
-    with: { runner_label: 'staging' }
