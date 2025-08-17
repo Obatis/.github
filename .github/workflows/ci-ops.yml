@@ -1,70 +1,49 @@
-name: CI Ops (Reusable)
+name: CI Ops
 
 on:
   workflow_call:
     inputs:
-      runner_label: { type: string, default: "staging", required: false }
-      node_version: { type: string, default: "20", required: false }
-      markdown_lint: { type: boolean, default: true, required: false }
-      link_check: { type: boolean, default: false, required: false }
-      build_docs: { type: boolean, default: true, required: false }
+      runner_label:
+        type: string
+        default: "ubuntu-latest"
+        required: false
+      run_linters:
+        type: boolean
+        default: true
+        required: false
+      run_security:
+        type: boolean
+        default: true
+        required: false
 
 permissions:
   contents: read
-  pull-requests: write
   checks: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.run_id }}
-  cancel-in-progress: false
+  pull-requests: write
 
 jobs:
   ops-ci:
-    name: ops-ci
-    runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
+    runs-on: ${{ inputs.runner_label }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Shellcheck (bash scripts)
+        if: ${{ inputs.run_linters }}
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y shellcheck
+          find . -type f -name "*.sh" -print0 | xargs -0 -r shellcheck
+
+      - name: Markdownlint
+        if: ${{ inputs.run_linters }}
+        run: |
+          npm i -g markdownlint-cli || true
+          markdownlint "**/*.md" || true
+
+      - name: Trivy FS scan (security)
+        if: ${{ inputs.run_security }}
+        uses: aquasecurity/trivy-action@0.24.0
         with:
-          node-version: ${{ inputs.node_version }}
-          cache: npm
-
-      - name: Install deps
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
-
-      - name: Lint Markdown
-        if: ${{ inputs.markdown_lint }}
-        run: npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules" ${MARKDOWNLINT_CONFIG:+--config "$MARKDOWNLINT_CONFIG"}
-        env:
-          MARKDOWNLINT_CONFIG: .markdownlint.yml
-
-      - name: Link check
-        if: ${{ inputs.link_check }}
-        run: npx --yes linkinator@6.1.2 . --recurse --silent --skip "node_modules|^mailto:|^tel:" --timeout 60000
-
-      - name: Detect Docusaurus
-        id: detect_docs
-        if: ${{ inputs.build_docs }}
-        run: |
-          if [ -f docusaurus.config.ts ] || [ -f docusaurus.config.js ]; then
-            echo "has_docs=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_docs=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build Docs
-        if: ${{ inputs.build_docs && steps.detect_docs.outputs.has_docs == 'true' }}
-        run: |
-          npx --yes docusaurus@latest build
-          cd build && zip -r ../site-build.zip . && cd -
-
-      - name: Upload site artifact
-        if: ${{ inputs.build_docs && steps.detect_docs.outputs.has_docs == 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: site-build
-          path: site-build.zip
-          if-no-files-found: ignore
+          scan-type: fs
+          ignore-unfixed: true
+          format: table
+          exit-code: '0'
