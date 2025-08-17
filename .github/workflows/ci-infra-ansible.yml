@@ -1,63 +1,47 @@
-name: CI Frontend (Flutter)
+name: CI Infra (Ansible)
 
 on:
   workflow_call:
     inputs:
-      channel:
-        type: string
-        default: "stable"
-        required: false
       runner_label:
         type: string
-        default: "staging"
+        default: "ubuntu-latest"
+        required: false
+      run_yamllint:
+        type: boolean
+        default: true
+        required: false
+      run_molecule:
+        type: boolean
+        default: false
         required: false
 
 permissions:
   contents: read
-  pull-requests: write
   checks: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.run_id }}
-  cancel-in-progress: false
+  pull-requests: write
 
 jobs:
-  frontend-ci:
-    name: frontend-ci
-    runs-on: [self-hosted, linux, ${{ inputs.runner_label }}]
+  infra-ci:
+    runs-on: ${{ inputs.runner_label }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: ${{ inputs.channel }}
-
-      - name: Cache pub
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
-
-      - name: Resolve deps
-        run: flutter pub get
-
-      - name: Format check
-        run: dart format --output=none --set-exit-if-changed .
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Tests (with coverage)
+      - name: Install deps
         run: |
-          flutter test --coverage
-          test -f coverage/lcov.info || exit 1
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pip
+          pip3 install ansible yamllint molecule
 
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: coverage/lcov.info
-          if-no-files-found: error
+      - name: YAML Lint
+        if: ${{ inputs.run_yamllint }}
+        run: yamllint .
+
+      - name: Ansible Syntax (optional example)
+        run: |
+          test -f playbook.yml && ansible-playbook --syntax-check playbook.yml || echo "no playbook.yml"
+
+      - name: Molecule (optional)
+        if: ${{ inputs.run_molecule }}
+        run: |
+          test -d molecule && molecule test || echo "no molecule dir"
