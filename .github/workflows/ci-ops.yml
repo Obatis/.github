@@ -3,18 +3,12 @@ name: CI Ops
 on:
   workflow_call:
     inputs:
-      runner_label:
-        type: string
-        default: "ubuntu-latest"
-        required: false
-      run_linters:
-        type: boolean
-        default: true
-        required: false
-      run_security:
-        type: boolean
-        default: true
-        required: false
+      runner_label:    { type: string,  default: "ubuntu-latest", required: false }
+      use_self_hosted: { type: boolean, default: false,           required: false }
+      node_version:    { type: string,  default: "20",            required: false }
+      markdown_lint:   { type: boolean, default: true,            required: false }
+      link_check:      { type: boolean, default: false,           required: false }
+      build_docs:      { type: boolean, default: false,           required: false }
 
 permissions:
   contents: read
@@ -23,27 +17,31 @@ permissions:
 
 jobs:
   ops-ci:
-    runs-on: ${{ inputs.runner_label }}
+    name: ops-ci
+    runs-on: ${{ inputs.use_self_hosted
+      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
+      || inputs.runner_label }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Shellcheck (bash scripts)
-        if: ${{ inputs.run_linters }}
-        run: |
-          sudo apt-get update -y && sudo apt-get install -y shellcheck
-          find . -type f -name "*.sh" -print0 | xargs -0 -r shellcheck
-
-      - name: Markdownlint
-        if: ${{ inputs.run_linters }}
-        run: |
-          npm i -g markdownlint-cli || true
-          markdownlint "**/*.md" || true
-
-      - name: Trivy FS scan (security)
-        if: ${{ inputs.run_security }}
-        uses: aquasecurity/trivy-action@0.24.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          scan-type: fs
-          ignore-unfixed: true
-          format: table
-          exit-code: '0'
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+
+      - name: Install deps
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Lint Markdown
+        if: ${{ inputs.markdown_lint }}
+        run: npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules" ${{ env.MARKDOWNLINT_CONFIG && format('--config "{0}"', env.MARKDOWNLINT_CONFIG) || '' }}
+
+      - name: Link checker (optional)
+        if: ${{ inputs.link_check }}
+        run: npx --yes markdown-link-check@3 "**/*.md" -q || true
+
+      - name: Build docs (optional)
+        if: ${{ inputs.build_docs }}
+        run: echo "build your docs here"

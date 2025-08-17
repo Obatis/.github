@@ -3,14 +3,9 @@ name: CI Frontend (Flutter)
 on:
   workflow_call:
     inputs:
-      runner_label:
-        type: string
-        default: "ubuntu-latest"
-        required: false
-      channel:
-        type: string
-        default: "stable"
-        required: false
+      runner_label:    { type: string,  default: "ubuntu-latest", required: false }
+      use_self_hosted: { type: boolean, default: false,           required: false }
+      channel:         { type: string,  default: "stable",         required: false }
 
 permissions:
   contents: read
@@ -19,7 +14,9 @@ permissions:
 
 jobs:
   frontend-ci:
-    runs-on: ${{ inputs.runner_label }}
+    runs-on: ${{ inputs.use_self_hosted
+      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
+      || inputs.runner_label }}
     steps:
       - uses: actions/checkout@v4
 
