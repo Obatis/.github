@@ -1,0 +1,49 @@
+name: Sync PR template to all repos
+on:
+  push:
+    paths:
+      - 'PULL_REQUEST_TEMPLATE.md'
+      - '.github/workflows/sync-pr-template.yml'
+    branches: [ main ]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout .github
+        uses: actions/checkout@v4
+
+      - name: Install jq and gh
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install -y gh
+
+      - name: Auth gh
+        env:
+          GH_TOKEN: ${{ secrets.ORG_REPO_PAT }}
+        run: gh auth status
+
+      - name: Sync to all private repos in org
+        env:
+          GH_TOKEN: ${{ secrets.ORG_REPO_PAT }}
+          ORG: Obatis
+        run: |
+          set -euo pipefail
+          FILE_SRC="PULL_REQUEST_TEMPLATE.md"
+          b64=$(base64 -w0 "$FILE_SRC")
+          gh repo list "$ORG" --limit 200 --json name,visibility,isArchived \
+          | jq -r '.[] | select(.visibility=="PRIVATE" and .isArchived==false) | .name' \
+          | while read REPO; do
+              echo "Syncing to $ORG/$REPO"
+              gh api \
+                -X PUT \
+                -H "Accept: application/vnd.github+json" \
+                "/repos/$ORG/$REPO/contents/.github/pull_request_template.md" \
+                -f message="chore: sync PR template from org" \
+                -f content="$b64" \
+                -f branch="main" || echo ">>> Skip (no permission?) $REPO"
+            done
