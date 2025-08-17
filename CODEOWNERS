@@ -1,5 +1,0 @@
-* @Obatis/owners
-obatis-backend/ @Obatis/maintainers
-obatis-frontend/ @Obatis/maintainers
-obatis-infra/ @Obatis/owners @Obatis/maintainers
-obatis-ops/ @Obatis/owners
