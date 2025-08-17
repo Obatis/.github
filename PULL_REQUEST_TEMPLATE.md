@@ -104,3 +104,4 @@ Décrire le problème, l’approche retenue, et les alternatives écartées. -->
 - Joindre captures/gifs pour les changements UI.
 - Mentionner explicitement tout changement de contrat API ou de schéma.
 -->
+
