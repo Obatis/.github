@@ -3,39 +3,44 @@ name: CI Infra (Ansible)
 on:
   workflow_call:
     inputs:
-      runner_label:    { type: string,  default: "ubuntu-latest", required: false }
-      use_self_hosted: { type: boolean, default: false,           required: false }
-      run_yamllint:    { type: boolean, default: true,            required: false }
-      run_molecule:    { type: boolean, default: false,           required: false }
+      runner_label:  { type: string,  default: "staging", required: false }
+      use_self_hosted: { type: boolean, default: false,  required: false }
+      run_yamllint:  { type: boolean, default: true,     required: false }
+      run_molecule:  { type: boolean, default: false,    required: false }
 
 permissions:
   contents: read
-  checks: write
   pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   infra-ci:
-    runs-on: ${{ inputs.use_self_hosted
-      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
-      || inputs.runner_label }}
+    name: infra-ci
+    runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Install deps
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install tooling
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y python3-pip
-          pip3 install ansible yamllint molecule
+          python -m pip install --upgrade pip
+          pip install ansible ansible-lint yamllint molecule[docker]
 
-      - name: YAML Lint
+      - name: yamllint
         if: ${{ inputs.run_yamllint }}
         run: yamllint .
 
-      - name: Ansible Syntax (optional example)
-        run: |
-          test -f playbook.yml && ansible-playbook --syntax-check playbook.yml || echo "no playbook.yml"
+      - name: ansible-lint
+        run: ansible-lint
 
-      - name: Molecule (optional)
+      - name: Molecule (optionnel)
         if: ${{ inputs.run_molecule }}
-        run: |
-          test -d molecule && molecule test || echo "no molecule dir"
+        run: molecule test
