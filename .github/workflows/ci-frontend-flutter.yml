@@ -1,11 +1,21 @@
+# .github/workflows/ci-frontend-flutter.yml
 name: CI Frontend (Flutter)
 
 on:
   workflow_call:
     inputs:
-      channel:       { type: string,  default: "stable",  required: false }
-      runner_label:  { type: string,  default: "staging", required: false }
-      use_self_hosted: { type: boolean, default: false,  required: false }
+      channel:
+        type: string
+        default: "stable"
+        required: false
+      runner_label:
+        type: string
+        default: "staging"
+        required: false
+      use_self_hosted:
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
@@ -19,14 +29,24 @@ concurrency:
 jobs:
   frontend-ci:
     name: frontend-ci
+    # évite l’erreur YAML sur le + en construisant la liste proprement
     runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
+
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: ${{ inputs.channel }}
+
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
 
       - name: Resolve deps
         run: flutter pub get
