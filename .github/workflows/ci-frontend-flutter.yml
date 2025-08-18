@@ -3,35 +3,30 @@ name: CI Frontend (Flutter)
 on:
   workflow_call:
     inputs:
-      runner_label:    { type: string,  default: "ubuntu-latest", required: false }
-      use_self_hosted: { type: boolean, default: false,           required: false }
-      channel:         { type: string,  default: "stable",         required: false }
+      channel:       { type: string,  default: "stable",  required: false }
+      runner_label:  { type: string,  default: "staging", required: false }
+      use_self_hosted: { type: boolean, default: false,  required: false }
 
 permissions:
   contents: read
-  checks: write
   pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   frontend-ci:
-    runs-on: ${{ inputs.use_self_hosted
-      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
-      || inputs.runner_label }}
+    name: frontend-ci
+    runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: ${{ inputs.channel }}
-
-      - name: Cache pub
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
 
       - name: Resolve deps
         run: flutter pub get
@@ -45,7 +40,7 @@ jobs:
       - name: Tests (with coverage)
         run: |
           flutter test --coverage
-          test -f coverage/lcov.info || (echo "no coverage file" && exit 1)
+          test -f coverage/lcov.info || exit 1
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
