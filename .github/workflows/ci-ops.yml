@@ -24,7 +24,7 @@ jobs:
       || 'ubuntu-latest' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Setup Node avec cache si lockfile présent
       - name: Setup Node (with cache)
