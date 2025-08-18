@@ -3,43 +3,41 @@ name: CI Backend (Laravel)
 on:
   workflow_call:
     inputs:
-      runner_label:      { type: string,  default: "ubuntu-latest", required: false }
-      use_self_hosted:   { type: boolean, default: false,           required: false }
-      run_phpstan:       { type: boolean, default: true,            required: false }
-      run_phpcs:         { type: boolean, default: true,            required: false }
-      run_tests:         { type: boolean, default: true,            required: false }
+      php:          { type: string,  default: "8.3",     required: false }
+      runner_label: { type: string,  default: "staging", required: false }
+      use_self_hosted: { type: boolean, default: false, required: false }
 
 permissions:
   contents: read
-  checks: write
   pull-requests: write
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   backend-ci:
-    runs-on: ${{ inputs.use_self_hosted
-      && fromJSON('["self-hosted","linux","' + inputs.runner_label + '"]')
-      || inputs.runner_label }}
+    name: backend-ci
+    runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
+
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          tools: composer
-          extensions: mbstring, intl, pdo, pdo_mysql
+          php-version: ${{ inputs.php }}
+          tools: composer:v2
+          extensions: mbstring, intl, gd, pdo_mysql
+          coverage: none
 
-      - name: Install deps
-        run: composer install --no-interaction --prefer-dist
+      - name: Install Composer deps
+        run: composer install --no-interaction --no-progress --prefer-dist
 
-      - name: PHPStan
-        if: ${{ inputs.run_phpstan }}
-        run: vendor/bin/phpstan analyse --no-progress || vendor/bin/phpstan --version
+      - name: Préparer l'app
+        run: |
+          cp -n .env.example .env || true
+          php artisan key:generate || true
 
-      - name: PHPCS
-        if: ${{ inputs.run_phpcs }}
-        run: vendor/bin/phpcs -q || echo "PHPCS not configured"
-
-      - name: PHPUnit
-        if: ${{ inputs.run_tests }}
-        run: vendor/bin/phpunit --testdox || echo "PHPUnit not configured"
+      - name: Tests
+        run: php artisan test --parallel --stop-on-failure
