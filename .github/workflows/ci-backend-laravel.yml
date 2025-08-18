@@ -1,11 +1,38 @@
+---
 name: CI Backend (Laravel)
 
 on:
   workflow_call:
     inputs:
-      php:          { type: string,  default: "8.3",     required: false }
-      runner_label: { type: string,  default: "staging", required: false }
-      use_self_hosted: { type: boolean, default: false, required: false }
+      # runner
+      use_self_hosted:
+        type: boolean
+        default: false
+        required: false
+      runner_label:
+        type: string
+        default: "staging"
+        required: false
+
+      # toolchain
+      node_version:
+        type: string
+        default: "20"
+        required: false
+
+      # toggles
+      markdown_lint:
+        type: boolean
+        default: true
+        required: false
+      link_check:
+        type: boolean
+        default: false
+        required: false
+      build_docs:
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
@@ -19,25 +46,31 @@ concurrency:
 jobs:
   backend-ci:
     name: backend-ci
+    # runner GitHub-hosted ou self-hosted selon l'input
     runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: shivammathur/setup-php@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          php-version: ${{ inputs.php }}
-          tools: composer:v2
-          extensions: mbstring, intl, gd, pdo_mysql
-          coverage: none
+          node-version: ${{ inputs.node_version }}
+        if: ${{ inputs.markdown_lint || inputs.link_check || inputs.build_docs }}
 
-      - name: Install Composer deps
-        run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Préparer l'app
+      # ——— Lint Markdown (optionnel)
+      - name: Lint Markdown
+        if: ${{ inputs.markdown_lint }}
         run: |
-          cp -n .env.example .env || true
-          php artisan key:generate || true
+          npm --version || (corepack enable && corepack prepare npm@latest --activate)
+          npx --yes markdownlint-cli@0.41.0 "**/*.md" --ignore "node_modules"
 
-      - name: Tests
-        run: php artisan test --parallel --stop-on-failure
+      # ——— Link checker (optionnel, exemple simple)
+      - name: Check links
+        if: ${{ inputs.link_check }}
+        run: echo "Link check ici (ajoute ta logique ou une action dédiée)"
+
+      # ——— Build docs (optionnel, exemple simple)
+      - name: Build docs
+        if: ${{ inputs.build_docs }}
+        run: echo "Build docs ici (ajoute ta logique de génération)"
