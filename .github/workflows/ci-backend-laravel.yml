@@ -74,3 +74,4 @@ jobs:
       - name: Build docs
         if: ${{ inputs.build_docs }}
         run: echo "Build docs ici (ajoute ta logique de génération)"
+
