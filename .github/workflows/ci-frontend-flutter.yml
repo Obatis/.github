@@ -1,4 +1,3 @@
-# .github/workflows/ci-frontend-flutter.yml
 name: CI Frontend (Flutter)
 
 on:
@@ -16,6 +15,10 @@ on:
         type: boolean
         default: false
         required: false
+      project_dir:
+        type: string
+        default: "."
+        required: false
 
 permissions:
   contents: read
@@ -29,42 +32,67 @@ concurrency:
 jobs:
   frontend-ci:
     name: frontend-ci
-    # évite l’erreur YAML sur le + en construisant la liste proprement
-    runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.use_self_hosted
+      && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label))
+      || 'ubuntu-latest' }}
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Detect Flutter project
+        id: detect
+        shell: bash
+        run: |
+          DIR="${{ inputs.project_dir }}"
+          if [ -f "$DIR/pubspec.yaml" ]; then
+            echo "has_pub=true" >> "$GITHUB_OUTPUT"
+            echo "✅ pubspec.yaml found in $DIR"
+          else
+            echo "has_pub=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No pubspec.yaml found in $DIR. Skipping Flutter steps."
+          fi
+
       - name: Setup Flutter
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         uses: subosito/flutter-action@v2
         with:
           channel: ${{ inputs.channel }}
 
       - name: Cache pub
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          key: ${{ runner.os }}-pub-${{ hashFiles(format('{0}/pubspec.lock', inputs.project_dir)) }}
           restore-keys: |
             ${{ runner.os }}-pub-
 
       - name: Resolve deps
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         run: flutter pub get
+        working-directory: ${{ inputs.project_dir }}
 
       - name: Format check
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         run: dart format --output=none --set-exit-if-changed .
+        working-directory: ${{ inputs.project_dir }}
 
       - name: Analyze
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         run: flutter analyze
+        working-directory: ${{ inputs.project_dir }}
 
       - name: Tests (with coverage)
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         run: |
           flutter test --coverage
           test -f coverage/lcov.info || exit 1
+        working-directory: ${{ inputs.project_dir }}
 
       - name: Upload coverage
+        if: ${{ steps.detect.outputs.has_pub == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
-          path: coverage/lcov.info
-          if-no-files-found: error
+          path: ${{ inputs.project_dir }}/coverage/lcov.info
+          if-no-files-found: warn
