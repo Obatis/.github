@@ -1,5 +1,28 @@
-* @Obatis/owners
-obatis-backend/ @Obatis/maintainers
-obatis-frontend/ @Obatis/maintainers
-obatis-infra/ @Obatis/owners @Obatis/maintainers
-obatis-ops/ @Obatis/owners
+# ---- CODEOWNERS (scope: infra/ops minimum) ----
+# Les lignes plus bas priment sur celles du haut (règle la plus spécifique gagne).
+
+# GitHub Actions & config de repo
+/.github/workflows/**   @Obatis/owners @Obatis/maintainers
+/.github/*.yml          @Obatis/owners @Obatis/maintainers
+/.github/*.yaml         @Obatis/owners @Obatis/maintainers
+
+# Infrastructure as Code / déploiement
+/infra/**               @Obatis/owners @Obatis/maintainers
+/ansible/**             @Obatis/owners @Obatis/maintainers
+/playbooks/**           @Obatis/owners @Obatis/maintainers
+/deploy/**              @Obatis/owners @Obatis/maintainers
+/docker/**              @Obatis/owners @Obatis/maintainers
+
+# Ops / observabilité
+/ops/**                 @Obatis/owners @Obatis/maintainers
+/observability/**       @Obatis/owners @Obatis/maintainers
+/monitoring/**          @Obatis/owners @Obatis/maintainers
+/grafana/**             @Obatis/owners @Obatis/maintainers
+/prometheus/**          @Obatis/owners @Obatis/maintainers
+/loki/**                @Obatis/owners @Obatis/maintainers
+/otel/**                @Obatis/owners @Obatis/maintainers
+/scripts/**             @Obatis/owners @Obatis/maintainers
+/bin/**                 @Obatis/owners @Obatis/maintainers
+
+# (Optionnel) Propriétaires par défaut pour tout le reste :
+# *                      @Obatis/maintainers
