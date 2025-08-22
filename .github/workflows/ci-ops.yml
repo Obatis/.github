@@ -3,7 +3,7 @@ name: CI Ops
 on:
   workflow_call:
     inputs:
-      runner_label:  { type: string,  default: "staging", required: false }
+      runner_label:  { type: string,  default: "", required: false }
       use_self_hosted: { type: boolean, default: false,     required: false }
       node_version:  { type: string,  default: "20",     required: false }
       markdown_lint: { type: boolean, default: true,     required: false }
