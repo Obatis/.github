@@ -11,7 +11,7 @@ on:
         required: false
       runner_label:
         type: string
-        default: "staging"
+        default: ""
         required: false
 
       # toolchain
