@@ -9,7 +9,7 @@ on:
         required: false
       runner_label:
         type: string
-        default: "staging"
+        default: ""
         required: false
       use_self_hosted:
         type: boolean
