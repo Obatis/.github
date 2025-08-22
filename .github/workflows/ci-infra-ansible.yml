@@ -3,7 +3,7 @@ name: CI Infra (Ansible)
 on:
   workflow_call:
     inputs:
-      runner_label:  { type: string,  default: "staging", required: false }
+      runner_label:  { type: string,  default: "", required: false }
       use_self_hosted: { type: boolean, default: false,  required: false }
       run_yamllint:  { type: boolean, default: true,     required: false }
       run_molecule:  { type: boolean, default: false,    required: false }
