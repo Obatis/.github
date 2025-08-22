@@ -1,0 +1,33 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+prerelease: false
+
+categories:
+  - title: "🚀 Features"
+    labels: [ "type:feat" ]
+  - title: "🐛 Bug fixes"
+    labels: [ "type:fix" ]
+  - title: "📚 Documentation"
+    labels: [ "type:docs" ]
+  - title: "♻️ Refactoring"
+    labels: [ "type:refactor" ]
+  - title: "🧰 Maintenance / Infra"
+    labels: [ "type:chore", "type:infra" ]
+
+exclude-labels:
+  - "skip-changelog"
+
+change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
+template: |
+  ## Changes
+  $CHANGES
+
+version-resolver:
+  major:
+    labels: [ "breaking" ]
+  minor:
+    labels: [ "type:feat" ]
+  patch:
+    labels: [ "type:fix", "type:refactor", "type:docs", "type:infra" ]
+  default: patch
+commitish: main
