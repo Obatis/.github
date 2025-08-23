@@ -37,7 +37,7 @@ jobs:
       || 'ubuntu-latest' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 #v4
 
       - name: Detect Flutter project
         id: detect
@@ -54,13 +54,13 @@ jobs:
 
       - name: Setup Flutter
         if: ${{ steps.detect.outputs.has_pub == 'true' }}
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@e938fdf56512cc96ef2f93601a5a40bde3801046 #v2
         with:
           channel: ${{ inputs.channel }}
 
       - name: Cache pub
         if: ${{ steps.detect.outputs.has_pub == 'true' }}
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 #v4
         with:
           path: ~/.pub-cache
           key: ${{ runner.os }}-pub-${{ hashFiles(format('{0}/pubspec.lock', inputs.project_dir)) }}
@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload coverage
         if: ${{ steps.detect.outputs.has_pub == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4
         with:
           name: frontend-coverage
           path: ${{ inputs.project_dir }}/coverage/lcov.info
