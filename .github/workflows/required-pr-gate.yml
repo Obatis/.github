@@ -1,0 +1,63 @@
+name: obatis-pr-gate
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+  merge_group: {}   # prêt pour la merge queue, même si tu ne l’utilises pas encore
+
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+# Mode soft par défaut (aucun blocage) ; on passera à "true" quand tu voudras rendre bloquant.
+env:
+  STRICT: "false"
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # v4
+        with: { fetch-depth: 0 }
+
+      - name: Branch naming (soft)
+        id: branch
+        shell: bash
+        run: |
+          BR="${{ github.head_ref }}"
+          if [[ ! "$BR" =~ ^(feat|fix|chore|docs|refactor|infra|ci)/.+$ ]]; then
+            echo "::warning::Branch '$BR' ne respecte pas la convention (feat|fix|chore|docs|refactor|infra|ci)/*"
+            echo "BAD=1" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fichiers requis (soft)
+        id: files
+        shell: bash
+        run: |
+          missing=0
+          test -f .github/pull_request_template.md || { echo "::warning::Manque .github/pull_request_template.md"; missing=1; }
+          test -f .github/CODEOWNERS || test -f CODEOWNERS || { echo "::warning::Manque CODEOWNERS"; missing=1; }
+          echo "MISSING=$missing" >> $GITHUB_OUTPUT
+
+      - name: Résumé
+        shell: bash
+        run: |
+          {
+            echo "### PR Gate — synthèse"
+            echo "- Branch : \`$GITHUB_HEAD_REF\`"
+            echo "- Strict : \`${{ env.STRICT }}\`"
+            echo "- Convention branche : $([[ '${{ steps.branch.outputs.BAD }}' == '1' ]] && echo '❌' || echo '✅')"
+            echo "- Fichiers requis : $([[ '${{ steps.files.outputs.MISSING }}' == '1' ]] && echo '❌' || echo '✅')"
+            echo ""
+            echo "> Rappels point 14 (CI/CD) : critères d’acceptation, lint/tests unitaires du repo, migrations up/down, logs/observabilité, release-drafter."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Si un jour tu passes STRICT="true", ce step fera rater le job (et donc bloquera le merge)
+      - name: Fail si STRICT
+        if: env.STRICT == 'true' && (steps.branch.outputs.BAD == '1' || steps.files.outputs.MISSING == '1')
+        shell: bash
+        run: |
+          echo "Conditions non remplies en mode STRICT" ; exit 1
