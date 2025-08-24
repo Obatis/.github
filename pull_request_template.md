@@ -29,6 +29,7 @@ IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 > Laisser vide si aucune dépendance.
 
 <!-- linked_prs:start -->
+
 <!-- linked_prs:end -->
 
 **Meta-PR (coordination multi-repos, optionnel)** : Obatis/obatis-ops#  
