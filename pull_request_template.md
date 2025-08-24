@@ -29,11 +29,7 @@ IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 > Laisser vide si aucune dépendance.
 
 <!-- linked_prs:start -->
-<!-- Ajoutez une PR par ligne, ex.:
-Obatis/obatis-api#123
-Obatis/obatis-app#456
-https://github.com/Obatis/obatis-ops/pull/789
--->
+
 <!-- linked_prs:end -->
 
 **Meta-PR (coordination multi-repos, optionnel)** : Obatis/obatis-ops#  
