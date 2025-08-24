@@ -20,6 +20,26 @@
 DB (PostgreSQL) | Infra/DevOps (Nginx, Docker, Ploi, CI/CD) |
 IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 
+---
+
+## Inter-repo — PR liées / Depends on
+
+> **Quand l’évolution touche plusieurs dépôts**, lister ici les PR sœurs (une par ligne).  
+> **Formats supportés** : `owner/repo#123` · `#123` (même dépôt) · URL complète `https://github.com/owner/repo/pull/123`  
+> Laisser vide si aucune dépendance.
+
+<!-- linked_prs:start -->
+<!-- Ajoutez une PR par ligne, ex.:
+Obatis/obatis-api#123
+Obatis/obatis-app#456
+https://github.com/Obatis/obatis-ops/pull/789
+-->
+<!-- linked_prs:end -->
+
+**Meta-PR (coordination multi-repos, optionnel)** : Obatis/obatis-ops#  
+
+---
+
 ## Impacts
 
 - [ ] Breaking change
@@ -33,6 +53,8 @@ IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 
 **Détails d’impact** (modules/services touchés, risques business) :
 
+---
+
 ## Critères d’acceptation
 
 **CA-1 :**
@@ -44,6 +66,8 @@ IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 - Given
 - When
 - Then
+
+---
 
 ## Notes de test manuels (facultatif)
 
@@ -111,6 +135,8 @@ IA/Workers (DeepSeek, Whisper, OCR) | Stockage (Wasabi/Bunny) | Sécurité/RGPD
 > revert commit → `php artisan up`  
 **Feature flag / kill-switch** :  
 **Données à restaurer / scripts de correction** :
+
+---
 
 ## Liens docs
 
