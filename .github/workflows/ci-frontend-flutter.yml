@@ -37,7 +37,7 @@ jobs:
       || 'ubuntu-latest' }}
 
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 #v4
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4
 
       - name: Detect Flutter project
         id: detect
@@ -54,7 +54,7 @@ jobs:
 
       - name: Setup Flutter
         if: ${{ steps.detect.outputs.has_pub == 'true' }}
-        uses: subosito/flutter-action@e938fdf56512cc96ef2f93601a5a40bde3801046 #v2
+        uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e #v2
         with:
           channel: ${{ inputs.channel }}
 
