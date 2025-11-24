@@ -27,10 +27,10 @@ jobs:
     # IMPORTANT : pas de concaténation avec '+'. Utilise format() + fromJSON().
     runs-on: ${{ inputs.use_self_hosted && fromJSON(format('["self-hosted","linux","{0}"]', inputs.runner_label)) || 'ubuntu-latest' }}
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 #v4
+      - uses: actions/checkout@c2d88d3ecc89a9ef08eebf45d9637801dcee7eb5 #v4
 
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v4
         with:
           node-version: ${{ inputs.node_version }}
         # Surtout PAS de "cache: npm" (sinon erreur si pas de lockfile)
